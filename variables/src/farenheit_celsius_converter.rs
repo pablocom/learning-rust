@@ -19,8 +19,12 @@ mod tests {
 
         for (input, expected) in cases {
             let actual = fahrenheit_to_celsius(input);
-            
-            assert_eq!(actual, expected, "Failed at {}°F: expected {}, got {}", input, expected, actual);
+
+            assert_eq!(
+                actual, expected,
+                "Failed at {}°F: expected {}, got {}",
+                input, expected, actual
+            );
         }
     }
 }

@@ -1,4 +1,5 @@
 mod farenheit_celsius_converter;
+mod fibonacci_number;
 
 use std::io;
 
@@ -9,19 +10,19 @@ fn main() {
 
     let mut x = 5;
     println!("x just initialized is -> {x}");
-    
+
     x = x + 1;
     println!("x reassigned to -> {x}");
 
     let x = x + 27;
-    println!("x shadowed with value -> {x}");    
+    println!("x shadowed with value -> {x}");
 
     {
         let x = x * 69;
-        println!("x shadowed within a scope -> {x}");   
+        println!("x shadowed within a scope -> {x}");
     }
 
-    println!("x value at scope exit -> {x}");   
+    println!("x value at scope exit -> {x}");
 
     let tup = (500, 6.4, 1u8);
 
