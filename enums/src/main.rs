@@ -1,16 +1,23 @@
 fn main() {
-    let home = IpAddr::V4(127, 0, 0, 1);
-    let loopback = IpAddr::V6(String::from("::1"));
+    let ip_addresses = [
+        IpAddr::V4(127, 0, 0, 1),
+        IpAddr::V6(String::from("::1")),
+        IpAddr::V6(String::from("14a3:f0ce:63b9:6733:adc9:b77d:bad1:adc0")),
+        IpAddr::V4(1, 1, 1, 1),
+    ];
 
-    println!("{:?}", home);
-    println!("{:?}", loopback);
+    for ip_address in ip_addresses {
+        match ip_address {
+            IpAddr::V4(a, b, c, d) => println!("IPv4: {}.{}.{}.{}", a, b, c, d),
+            IpAddr::V6(addr) => println!("IPv6: {}", addr),
+        };
+    }
 
     let country_code = "ES";
     let meal = most_famous_meal(country_code);
     println!("Most famous meal in {:?}: {:?}", country_code, meal);
 }
 
-#[derive(Debug)]
 enum IpAddr {
     V4(u8, u8, u8, u8),
     V6(String),
