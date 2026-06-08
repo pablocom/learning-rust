@@ -25,8 +25,8 @@ fn run(query: TextSearchQuery) -> Result<(), Box<dyn Error>> {
         search_case_sensitive(&query.text_to_find, &file_content)
     };
 
-    for line in results {
-        println!("{line}");
+    for result in results {
+        println!("{result}");
     }
 
     Ok(())
@@ -35,7 +35,7 @@ fn run(query: TextSearchQuery) -> Result<(), Box<dyn Error>> {
 struct TextSearchQuery<'a> {
     text_to_find: &'a str,
     file_path: &'a str,
-    ignore_case: bool
+    ignore_case: bool,
 }
 
 impl<'a> TextSearchQuery<'a> {

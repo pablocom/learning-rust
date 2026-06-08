@@ -1,22 +1,48 @@
-pub fn search_case_sensitive<'a>(text_to_find: &str, file_content: &'a str) -> Vec<&'a str> {
+use std::fmt;
+
+#[derive(Debug, PartialEq)]
+pub struct SearchMatch<'a> {
+    pub line_number: usize,
+    pub line_content: &'a str,
+}
+
+impl<'a> fmt::Display for SearchMatch<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Line {}: {}", self.line_number, self.line_content)
+    }
+}
+
+pub fn search_case_sensitive<'a>(
+    text_to_find: &str,
+    file_content: &'a str,
+) -> Vec<SearchMatch<'a>> {
     let mut results = Vec::new();
 
-    for line in file_content.lines() {
+    for (index, line) in file_content.lines().enumerate() {
         if line.contains(text_to_find) {
-            results.push(line);
+            results.push(SearchMatch {
+                line_number: index + 1,
+                line_content: line,
+            });
         }
     }
 
     results
 }
 
-pub fn search_case_insensitive<'a>(text_to_find: &str, file_content: &'a str) -> Vec<&'a str> {
+pub fn search_case_insensitive<'a>(
+    text_to_find: &str,
+    file_content: &'a str,
+) -> Vec<SearchMatch<'a>> {
     let text_to_lower = text_to_find.to_lowercase();
     let mut results = Vec::new();
 
-    for line in file_content.lines() {
+    for (index, line) in file_content.lines().enumerate() {
         if line.to_lowercase().contains(&text_to_lower) {
-            results.push(line);
+            results.push(SearchMatch {
+                line_number: index + 1,
+                line_content: line,
+            });
         }
     }
 
@@ -35,7 +61,7 @@ Rust:
 safe, fast, productive.
 Pick three.";
 
-        let empty: Vec<&str> = vec![];
+        let empty: Vec<SearchMatch> = vec![];
         assert_eq!(empty, search_case_sensitive(text_to_find, file_content));
     }
 
@@ -48,7 +74,10 @@ safe, fast, productive.
 Pick three.";
 
         assert_eq!(
-            vec!["safe, fast, productive."],
+            vec![SearchMatch {
+                line_number: 2,
+                line_content: "safe, fast, productive."
+            }],
             search_case_sensitive(text_to_find, file_content)
         );
     }
@@ -62,7 +91,16 @@ safe, fast, productive.
 Pick three.";
 
         assert_eq!(
-            vec!["Rust:", "safe, fast, productive."],
+            vec![
+                SearchMatch {
+                    line_number: 1,
+                    line_content: "Rust:"
+                },
+                SearchMatch {
+                    line_number: 2,
+                    line_content: "safe, fast, productive."
+                }
+            ],
             search_case_sensitive(text_to_find, file_content)
         );
     }
@@ -76,7 +114,20 @@ safe, fast, productive.
 Pick three.";
 
         assert_eq!(
-            vec!["Rust:", "safe, fast, productive.", "Pick three."],
+            vec![
+                SearchMatch {
+                    line_number: 1,
+                    line_content: "Rust:"
+                },
+                SearchMatch {
+                    line_number: 2,
+                    line_content: "safe, fast, productive."
+                },
+                SearchMatch {
+                    line_number: 3,
+                    line_content: "Pick three."
+                }
+            ],
             search_case_insensitive(text_to_find, file_content)
         );
     }
