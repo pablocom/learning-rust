@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "rgrep"
+name = "grup"
 version = "0.1.0"
