@@ -65,8 +65,4 @@ fn main() {
     push_borrow_mutable(23);
     push_borrow_mutable(22);
     println!("4: {numbers:?}");
-
-    thread::spawn(move || println!("From thread: {numbers:?}"))
-        .join()
-        .unwrap();
 }
