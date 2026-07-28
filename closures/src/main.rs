@@ -1,3 +1,5 @@
+use std::thread;
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum ShirtColor {
     Red,
@@ -52,10 +54,26 @@ fn main() {
 
     let mut numbers = vec![1, 2, 3];
 
-    let print = || println!("From closure: {numbers:?}");
+    let print_borrow_immutable = || println!("From closure: {numbers:?}");
 
-    println!("Before calling closure: {numbers:?}");
-    print();
+    println!("2: {numbers:?}");
+    print_borrow_immutable();
     numbers.push(4);
-    println!("After calling closure: {numbers:?}");
+    println!("3: {numbers:?}");
+
+    let mut push_borrow_mutable = |num: i32| numbers.push(num);
+    push_borrow_mutable(23);
+    push_borrow_mutable(22);
+    println!("4: {numbers:?}");
+
+    thread::spawn(move || {
+        let t = thread::current();
+        println!(
+            "{:?} ({}): {numbers:?}",
+            t.id(),
+            t.name().unwrap_or("<unnamed>")
+        );
+    })
+    .join()
+    .unwrap();
 }
