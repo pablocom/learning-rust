@@ -1,5 +1,3 @@
-use std::thread;
-
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum ShirtColor {
     Red,
