@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 pub(crate) struct Node<T> {
     pub(crate) element: T,
     pub(crate) next: Option<Box<Node<T>>>,
@@ -192,6 +194,21 @@ impl<'a, T> IntoIterator for &'a mut LinkedList<T> {
     }
 }
 
+impl<T> FromIterator<T> for LinkedList<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut list = Self::new();
+        let mut cur = &mut list.head;
+
+        for item in iter {
+            let node = cur.insert(Box::new(Node::new(item, None)));
+            cur = &mut node.next;
+            list.length += 1;
+        }
+
+        list
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -327,5 +344,15 @@ mod tests {
         let sum: i32 = list.iter().filter(|&&x| x % 2 != 0).sum();
 
         assert_eq!(sum, 9);
+    }
+
+    #[test]
+    fn collects_from_an_iterator_into_a_linked_list() {
+        let numbers = vec![1, 2, 3, 4, 5];
+
+        let list: LinkedList<i32> = numbers.into_iter().collect();
+
+        assert_eq!(list.len(), 5);
+        assert_eq!(Vec::from(list), vec![1, 2, 3, 4, 5]);
     }
 }
