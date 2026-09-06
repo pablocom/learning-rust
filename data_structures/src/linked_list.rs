@@ -55,6 +55,38 @@ impl<T> LinkedList<T> {
         self.head = Some(new_node);
         self.length += 1;
     }
+
+    #[must_use]
+    pub fn peek_front(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.element)
+    }
+
+    #[must_use]
+    pub fn peek_front_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.element)
+    }
+
+    fn clear(&mut self) {
+        let mut current = self.head.take();
+        while let Some(mut boxed_node) = current {
+            current = boxed_node.next.take();
+        }
+        self.length = 0;
+    }
+
+    #[must_use]
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter {
+            next: self.head.as_deref(),
+        }
+    }
+
+    #[must_use]
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut {
+            next: self.head.as_deref_mut(),
+        }
+    }
 }
 
 impl<T> From<Vec<T>> for LinkedList<T> {
@@ -87,6 +119,79 @@ impl<T> From<LinkedList<T>> for Vec<T> {
     }
 }
 
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
+pub struct IntoIter<T>(LinkedList<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop_first()
+    }
+}
+
+impl<T> IntoIterator for LinkedList<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter(self)
+    }
+}
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_deref();
+            &node.element
+        })
+    }
+}
+
+impl<'a, T> IntoIterator for &'a LinkedList<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_deref_mut();
+            &mut node.element
+        })
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut LinkedList<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,7 +206,7 @@ mod tests {
 
     #[test]
     fn creates_list_from_a_vector() {
-        let vector = vec![2, 3, 4];
+        let vector = vec![1, 2, 3];
 
         let list: LinkedList<i32> = vector.clone().into();
 
@@ -129,7 +234,6 @@ mod tests {
         list.add_first(value);
 
         assert_eq!(list.len(), 1);
-
         assert_eq!(list.head.as_ref().unwrap().element, value);
     }
 
@@ -142,11 +246,86 @@ mod tests {
         list.add_first(value);
 
         assert_eq!(list.len(), 2);
-
         assert_eq!(list.head.as_ref().unwrap().element, value);
         assert_eq!(
             list.head.as_ref().unwrap().next.as_ref().unwrap().element,
             existing_element
         );
+    }
+
+    #[test]
+    fn peeks_front_item_without_removing_it_or_consuming_ownership() {
+        let list: LinkedList<i32> = vec![2, 3, 4].into();
+
+        let front_element: Option<&i32> = list.peek_front();
+
+        assert_eq!(front_element.unwrap(), &2);
+        assert_eq!(Vec::from(list), vec![2, 3, 4]);
+    }
+
+    #[test]
+    fn peeks_front_item_mutably_and_allows_in_place_modification() {
+        let mut list: LinkedList<i32> = vec![10, 20, 30].into();
+
+        if let Some(front_element) = list.peek_front_mut() {
+            *front_element = 42;
+        }
+
+        assert_eq!(list.peek_front(), Some(&42));
+        assert_eq!(Vec::from(list), vec![42, 20, 30]);
+    }
+
+    #[test]
+    fn clears_all_elements_from_the_list() {
+        let mut list: LinkedList<i32> = vec![1, 2, 3, 4, 5].into();
+
+        list.clear();
+
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn into_iter_consumes_list_and_yields_owned_elements() {
+        let list: LinkedList<i32> = vec![1, 2, 3].into();
+
+        let mut values = Vec::new();
+        for item in list {
+            values.push(item);
+        }
+
+        assert_eq!(values, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn iter_borrows_list_and_allows_multiple_passes() {
+        let list: LinkedList<i32> = vec![10, 20, 30].into();
+
+        let first_pass: Vec<&i32> = list.iter().collect();
+        let second_pass: Vec<&i32> = (&list).into_iter().collect();
+
+        assert_eq!(first_pass, vec![&10, &20, &30]);
+        assert_eq!(second_pass, vec![&10, &20, &30]);
+        assert_eq!(list.len(), 3);
+    }
+
+    #[test]
+    fn iter_mut_allows_in_place_element_modification() {
+        let mut list: LinkedList<i32> = vec![1, 2, 3].into();
+
+        for val in &mut list {
+            *val *= 10;
+        }
+
+        let result: Vec<i32> = Vec::from(list);
+        assert_eq!(result, vec![10, 20, 30]);
+    }
+
+    #[test]
+    fn iterators_support_standard_combinators() {
+        let list: LinkedList<i32> = vec![1, 2, 3, 4, 5].into();
+
+        let sum: i32 = list.iter().filter(|&&x| x % 2 != 0).sum();
+
+        assert_eq!(sum, 9);
     }
 }
