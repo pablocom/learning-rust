@@ -1,18 +1,42 @@
-use std::thread;
-use std::time::Duration;
+use std::{sync::mpsc, thread, time::Duration};
 
 fn main() {
-    let thread_handle = thread::spawn(|| {
-        for i in 1..10 {
-            println!("hi number {i} from the spawned thread!");
-            thread::sleep(Duration::from_millis(1));
+    let (sender, receiver) = mpsc::channel();
+    let another_sender = sender.clone();
+
+    thread::spawn(move || {
+        let values = vec![
+            String::from("hi"),
+            String::from("from"),
+            String::from("the"),
+            String::from("thread"),
+        ];
+
+        for value in values {
+            sender.send(value).unwrap();
+            thread::sleep(Duration::from_secs(1));
         }
     });
 
-    thread_handle.join().unwrap();
+    thread::spawn(move || {
+        let values = vec![
+            String::from("yo"),
+            String::from("this"),
+            String::from("was"),
+            String::from("inspired"),
+            String::from("by"),
+            String::from("golang?"),
+        ];
 
-    for i in 1..5 {
-        println!("hi number {i} from the main thread!");
-        thread::sleep(Duration::from_millis(1));
+        for value in values {
+            another_sender.send(value).unwrap();
+            thread::sleep(Duration::from_millis(1500));
+        }
+    });
+
+    let mut iteration = 0usize;
+    for received in receiver.iter() {
+        println!("Channel receival {iteration}: {received}");
+        iteration += 1;
     }
 }
