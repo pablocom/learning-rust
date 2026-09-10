@@ -3,23 +3,24 @@ use std::{
     rc::{Rc, Weak},
 };
 
-pub struct Node<T> {
+#[derive(Debug)]
+pub struct TreeNode<T> {
     pub value: RefCell<T>,
-    pub parent: RefCell<Weak<Node<T>>>,
-    pub children: RefCell<Vec<Rc<Node<T>>>>,
+    pub parent: RefCell<Weak<TreeNode<T>>>,
+    pub children: RefCell<Vec<Rc<TreeNode<T>>>>,
 }
 
-impl<T> Node<T> {
+impl<T> TreeNode<T> {
     #[must_use]
-    pub fn new(value: T) -> Rc<Node<T>> {
-        Rc::new(Node {
+    pub fn new(value: T) -> Rc<TreeNode<T>> {
+        Rc::new(TreeNode {
             value: RefCell::new(value),
             parent: RefCell::new(Weak::new()),
             children: RefCell::new(vec![]),
         })
     }
 
-    pub fn add_child(self: &Rc<Self>, child: Rc<Node<T>>) {
+    pub fn add_child(self: &Rc<Self>, child: Rc<TreeNode<T>>) {
         *child.parent.borrow_mut() = Rc::downgrade(self);
         self.children.borrow_mut().push(child);
     }
@@ -32,8 +33,8 @@ mod tests {
 
     #[test]
     fn creates_leaf_node_and_adds_child() {
-        let root = Node::new(1);
-        let leaf = Node::new(2);
+        let root = TreeNode::new(1);
+        let leaf = TreeNode::new(2);
 
         root.add_child(Rc::clone(&leaf));
 
@@ -46,8 +47,8 @@ mod tests {
 
     #[test]
     fn mutates_node_value_using_interior_mutability() {
-        let root = Node::new(10);
-        let leaf = Node::new(20);
+        let root = TreeNode::new(10);
+        let leaf = TreeNode::new(20);
         root.add_child(Rc::clone(&leaf));
 
         *leaf.value.borrow_mut() += 5;
@@ -60,8 +61,8 @@ mod tests {
 
     #[test]
     fn child_can_look_up_to_parent_using_weak_smart_pointer() {
-        let root = Node::new(10);
-        let leaf = Node::new(20);
+        let root = TreeNode::new(10);
+        let leaf = TreeNode::new(20);
         root.add_child(Rc::clone(&leaf));
 
         let parent_as_weak_pointer = leaf.parent.borrow();
@@ -75,15 +76,15 @@ mod tests {
 
     #[test]
     fn weak_pointer_becomes_none_when_parent_is_dropped() {
-        let leaf = Node::new(200);
+        let leaf = TreeNode::new(200);
 
         {
-            let root = Node::new(100);
-            root.add_child(Rc::clone(&leaf));
+            let root_that_will_after_scope = TreeNode::new(100);
+            root_that_will_after_scope.add_child(Rc::clone(&leaf));
 
             assert!(leaf.parent.borrow().upgrade().is_some());
-            assert_eq!(Rc::strong_count(&root), 1);
-        } // `root` goes out of scope here and is deallocated
+            assert_eq!(Rc::strong_count(&root_that_will_after_scope), 1);
+        }
 
         assert!(leaf.parent.borrow().upgrade().is_none());
     }
