@@ -1,7 +1,10 @@
-use object_oriented_programming::design_patterns::player::Player;
-use object_oriented_programming::design_patterns::state::{State, StoppedState};
+use object_oriented_programming::design_patterns::state::{Player, State, StoppedState};
 
 fn main() {
+    state_pattern_playground()
+}
+
+fn state_pattern_playground() {
     let mut player = Player::default();
     let mut state: Box<dyn State> = Box::new(StoppedState);
 
